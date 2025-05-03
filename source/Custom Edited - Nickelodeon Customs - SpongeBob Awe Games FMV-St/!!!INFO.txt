@@ -1,0 +1,15 @@
+Model by trussive
+2020
+
+You probably know what this is from. This is a replica of the model used in Awe's first few SpongeBob game FMVs.
+
+This particular one is modeled off of how he appears in Operation Krabby Patty.
+
+
+FOR OUTLINES:
+
+SpongeBob LANPR.blend has outlines set up already, but you will need a special version of Blender
+to view these. This is because Freestyle lines are not adequate enough, and this special version's feature will
+soon be added into official Blender, somewhere around 2.9.
+
+Here's a link: https://blender.community/c/graphicall/snbbbc/
