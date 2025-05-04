@@ -200,36 +200,18 @@ HRESULT load_skybox()
 
 	skyboxVertexBuffer->Unlock();
 
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("FRONT_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[0]
-	);
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("BACK_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[1]
-	);
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("LEFT_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[2]
-	);
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("RIGHT_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[3]
-	);
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("TOP_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[4]
-	);
-	result = D3DXCreateTextureFromFile(
-		renderDevice,
-		("BOTTOM_SIDE_TEXTURE.png"),
-		&skyboxTextureSet[5]
-	);
+	const char* files[6] = {
+  "FRONT_SIDE_TEXTURE.png", "BACK_SIDE_TEXTURE.png",
+  "LEFT_SIDE_TEXTURE.png",  "RIGHT_SIDE_TEXTURE.png",
+  "TOP_SIDE_TEXTURE.png",   "BOTTOM_SIDE_TEXTURE.png"
+	};
+	for (int i = 0; i < 6; ++i) {
+		if (FAILED(D3DXCreateTextureFromFile(renderDevice, files[i], &skyboxTextureSet[i]))) {
+			MessageBox(NULL, "SKYBOX TEXTURE NOT OPENED!", "ERROR!", MB_OK | MB_ICONSTOP);
+			return false;
+		}
+	}
+
 
 	if (FAILED(result))
 	{
@@ -810,7 +792,7 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 	CoUninitialize();
 
 	UnregisterClass(
-		"MARIO",
+		"SpongeBob",
 		window_class.hInstance
 	);
 
