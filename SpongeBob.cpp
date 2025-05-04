@@ -8,6 +8,31 @@
 
 
 
+#define SAFE_RELEASE(resource)            \
+    do {                                  \
+        if ((resource)) {                 \
+            (resource)->Release();        \
+            (resource) = NULL;            \
+        }                                 \
+    } while(0)
+
+#define SAFE_DELETE(resource)             \
+    do {                                  \
+        if ((resource)) {                 \
+            delete   (resource);          \
+            (resource) = NULL;            \
+        }                                 \
+    } while(0)
+
+#define SAFE_DELETE_ARRAY(resource)       \
+    do {                                  \
+        if ((resource)) {                 \
+            delete[] (resource);          \
+            (resource) = NULL;            \
+        }                                 \
+    } while(0)
+
+
 #pragma		comment					(lib, "dinput8.lib")
 #pragma		comment					(lib, "dxguid.lib")
 
@@ -614,49 +639,39 @@ VOID render()
 	);
 }
 
-
 VOID deinitialize()
 {
-	if (d3dInterface != NULL)
-		d3dInterface->Release();
+	// Direct3D
+	SAFE_RELEASE(renderDevice);
+	SAFE_RELEASE(d3dInterface);
 
-	if (renderDevice != NULL)
-		renderDevice->Release();
+	// Mesh & materials
+	SAFE_RELEASE(spongeModel);
+	SAFE_DELETE_ARRAY(spongeMaterials);
 
-	if (spongeModel != NULL)
-		spongeModel->Release();
-
-	if (spongeMaterials != NULL)
-		delete[] spongeMaterials;
-
-	if (spongeTextures != NULL)
-	{
-		for (DWORD iterator = 0; iterator < number_of_materials; iterator++)
-		{
-			if (spongeTextures[iterator])
-				spongeTextures[iterator]->Release();
-		}
-		delete[] spongeTextures;
+	if (spongeTextures) {
+		for (DWORD i = 0; i < number_of_materials; ++i)
+			SAFE_RELEASE(spongeTextures[i]);
+		SAFE_DELETE_ARRAY(spongeTextures);
 	}
 
-	if (graph_builder)
-		graph_builder->Release();
+	// Audio (DirectShow)
+	SAFE_RELEASE(media_control);
+	SAFE_RELEASE(media_event);
+	SAFE_RELEASE(graph_builder);
 
-	if (media_control)
-		media_control->Release();
-
-	if (media_event)
-		media_event->Release();
-
-	if (direct_input != NULL)
-		direct_input->Release();
-
-	if (keyboard_device != NULL)
+	// Input
+	if (keyboard_device) {
 		keyboard_device->Unacquire();
-
-	if (mouse_device != NULL)
+		SAFE_RELEASE(keyboard_device);
+	}
+	if (mouse_device) {
 		mouse_device->Unacquire();
+		SAFE_RELEASE(mouse_device);
+	}
+	SAFE_RELEASE(direct_input);
 }
+
 
 
 LRESULT WINAPI window_message_handler(HWND window_handler, UINT message, WPARAM word_parameter, LPARAM long_parameter)
