@@ -1,9 +1,11 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include <mmsystem.h>
 #include <d3dx9.h>
 #include <dshow.h>  
 #include <dinput.h> 
 #include "CAMERA.h"
+#include <vector>
+
 
 
 #pragma		comment					(lib, "dinput8.lib")
@@ -429,65 +431,39 @@ VOID detect_input()
 		(LPVOID)&mouse_state
 	);
 
-	if (keys_state[DIK_UP] & 0x80) {
-		if ((bounding_box_upper_right_corner.z + mesh_movement_size) < (skyboxSize - mesh_limit)) {
-			mesh_coordinate_z += mesh_movement_size;
-			bounding_box_lower_left_corner.z += mesh_movement_size;
-			bounding_box_upper_right_corner.z += mesh_movement_size;
+	// Generic axis-movement helper
+	auto MoveAxis = [&](BYTE key, float& coord, float delta, float min, float max) {
+		if (keys_state[key] & 0x80) {
+			float next = coord + delta;
+			if (next >= min && next <= max)
+				 coord = next;
+			
 		}
-	}
-	if (keys_state[DIK_DOWN] & 0x80) {
-		if ((bounding_box_lower_left_corner.z - mesh_movement_size) > -skyboxSize) {
-			mesh_coordinate_z -= mesh_movement_size;
-			bounding_box_lower_left_corner.z -= mesh_movement_size;
-			bounding_box_upper_right_corner.z -= mesh_movement_size;
-		}
-	}
-	if (keys_state[DIK_RIGHT] & 0x80) {
-		if ((bounding_box_upper_right_corner.x + mesh_movement_size) < (skyboxSize - mesh_limit)) {
-			spongePosX += mesh_movement_size;
-			bounding_box_lower_left_corner.x += mesh_movement_size;
-			bounding_box_upper_right_corner.x += mesh_movement_size;
-		}
-	}
-	if (keys_state[DIK_LEFT] & 0x80) {
-		if ((bounding_box_lower_left_corner.x - mesh_movement_size) > -skyboxSize) {
-			spongePosX -= mesh_movement_size;
-			bounding_box_lower_left_corner.x -= mesh_movement_size;
-			bounding_box_upper_right_corner.x -= mesh_movement_size;
-		}
-	}
-
-	if (keys_state[DIK_W] & 0x80) {
-		if (camera_coordinate_z + camera_movement_size < ( skyboxSize - camera_limit))
-			camera_coordinate_z += camera_movement_size;
-	}
-	if (keys_state[DIK_S] & 0x80) {
-		if (camera_coordinate_z - camera_movement_size > (-skyboxSize + camera_limit))
-			camera_coordinate_z -= camera_movement_size;
-	}
-	if (keys_state[DIK_D] & 0x80) {
-		if (camera_coordinate_x + camera_movement_size < (skyboxSize - camera_limit))
-			camera_coordinate_x += camera_movement_size;
-	}
-	if (keys_state[DIK_A] & 0x80) {
-		if (camera_coordinate_x - camera_movement_size > (-skyboxSize + camera_limit))
-			camera_coordinate_x -= camera_movement_size;
-	}
-	if (keys_state[DIK_ADD] & 0x80) {
-		if (camera_coordinate_y + camera_movement_size < (skyboxSize - camera_limit))
-			camera_coordinate_y += camera_movement_size;
-	}
-	if (keys_state[DIK_SUBTRACT] & 0x80) {
-		if (camera_coordinate_y - camera_movement_size > (-skyboxSize + camera_limit))
-			camera_coordinate_y -= camera_movement_size;
-	}
+		 };
+	
+		    // Listă configurabilă de mișcări
+	struct Movement { BYTE key; float& coord; float delta, min, max; };
+	std::vector<Movement> moves = {
+	{DIK_UP,    mesh_coordinate_z,  mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
+	{DIK_DOWN,  mesh_coordinate_z, -mesh_movement_size,    -skyboxSize + mesh_limit,   skyboxSize},
+	{DIK_RIGHT, spongePosX,         mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
+	{DIK_LEFT,  spongePosX,        -mesh_movement_size,    -skyboxSize + mesh_limit,   skyboxSize},
+	{DIK_W,     camera_coordinate_z, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	{DIK_S,     camera_coordinate_z,-camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	{DIK_D,     camera_coordinate_x, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	{DIK_A,     camera_coordinate_x,-camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	{DIK_ADD,   camera_coordinate_y, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	{DIK_SUBTRACT, camera_coordinate_y,-camera_movement_size,-skyboxSize + camera_limit, skyboxSize - camera_limit},
+	};
+	
+		    // Aplicăm toate mișcările
+		for (auto& m : moves)
+		 MoveAxis(m.key, m.coord, m.delta, m.min, m.max);
 
 
-	if (keys_state[DIK_M] & 0x80)
-		media_control->Run();
-	if (keys_state[DIK_P] & 0x80)
-		media_control->Pause();
+		// butoane audio
+		if (keys_state[DIK_M] & 0x80) media_control->Run();
+		if (keys_state[DIK_P] & 0x80) media_control->Pause();
 }
 
 
