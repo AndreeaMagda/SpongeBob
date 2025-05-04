@@ -104,8 +104,7 @@ LPD3DXMESH							spongeModel = NULL;			  //Obiectul meshei in sistem
 D3DMATERIAL9*						spongeMaterials = NULL;    //Material pt mesha
 DWORD								number_of_materials = 0L; // Nr de materiale al meshei
 LPDIRECT3DTEXTURE9*					spongeTextures = NULL;	  //Textura meshei
-float								spongePosX = 0.0f;
-float								spongePosY = 0.0f;
+float								spongePosX = 0.0f, spongePosY = 0.0f;
 float								mesh_coordinate_z = 0.0f;
 float								mesh_movement_size = 0.2f;
 float								mesh_limit = 2.0f;
@@ -126,11 +125,8 @@ DIMOUSESTATE						mouse_state;
 
 
 Camera*								camera;
-float								camera_coordinate_x = 0.0f;
-float								camera_coordinate_y = -6.0f;
-float								camera_coordinate_z = -5.8f;
-float								camera_rotation_x = 0.0f;
-float								camera_rotation_y = 0.0f;
+float								camera_coordinate_x = 0.0f, camera_coordinate_y = -6.0f, camera_coordinate_z = -5.8f;
+float								camera_rotation_x = 0.0f, camera_rotation_y = 0.0f;
 float								camera_movement_size = 0.4;
 float								camera_limit = 1.0f;
 
@@ -513,6 +509,109 @@ VOID setup_matrices()
 	);
 }
 
+VOID UpdateCamera() {
+	camera_rotation_y -= mouse_state.lY * 0.4f;
+	camera_rotation_x -= mouse_state.lX * 0.4f;
+	D3DXVECTOR3 eye_point(
+		10 * cosf(camera_rotation_x * D3DX_PI / 180),
+		10 * cosf(camera_rotation_y * D3DX_PI / 180) + sinf(camera_rotation_y * D3DX_PI / 180),
+		10 * sinf(camera_rotation_x * D3DX_PI / 180)
+	);
+	D3DXVECTOR3 look_at_point(
+		0.0f,
+		0.0f,
+		1.0f
+	);
+	D3DXVECTOR3 up_vector(
+		0.0f,
+		1.0f,
+		0.0f
+	);
+	camera->look_at_position(
+		&eye_point,
+		&look_at_point,
+		&up_vector);
+	camera->set_position(
+		camera_coordinate_x,
+		camera_coordinate_y,
+		camera_coordinate_z
+	);
+}
+
+VOID DrawSkyBox() {
+	renderDevice->SetFVF(D3DFVF_CUSTOM_VERTEX);
+	renderDevice->SetStreamSource(
+		0,
+		skyboxVertexBuffer,
+		0,
+		sizeof(CUSTOM_VERTEX)
+	);
+	renderDevice->SetRenderState(
+		D3DRS_LIGHTING,
+		FALSE
+	);
+
+	for (DWORD iterator = 0; iterator < 6; ++iterator)
+	{
+		renderDevice->SetTexture(
+			0,
+			skyboxTextureSet[iterator]
+		);
+		renderDevice->DrawPrimitive(
+			D3DPT_TRIANGLESTRIP,
+			iterator * 4,
+			2
+		);
+	}
+
+	renderDevice->SetRenderState(
+		D3DRS_LIGHTING,
+		TRUE
+	);
+}
+
+VOID DrawSpongeBob() {
+	D3DXMATRIX translation_matrix;
+	D3DXMATRIX rotation_matrix;
+
+	D3DXMatrixRotationY(
+		&rotation_matrix,
+		1.6f
+	);
+	D3DXMatrixTranslation(
+		&translation_matrix,
+		1.2f,
+		-8.8f,
+		-0.2f
+	);
+	D3DXMatrixMultiply(
+		&world_matrix,
+		&translation_matrix,
+		&rotation_matrix
+	);
+	renderDevice->SetTransform(
+		D3DTS_WORLD,
+		&world_matrix
+	);
+
+	D3DXMatrixTranslation(
+		&translation_matrix,
+		spongePosX,
+		0.9f,
+		mesh_coordinate_z
+	);
+	renderDevice->SetTransform(
+		D3DTS_WORLD,
+		&(world_matrix * translation_matrix)
+	);
+
+	for (DWORD iterator = 0; iterator < number_of_materials; iterator++)
+	{
+		renderDevice->SetMaterial(&spongeMaterials[iterator]);
+		renderDevice->SetTexture(0, spongeTextures[iterator]);
+		spongeModel->DrawSubset(iterator);
+	}
+}
 
 VOID render()
 {
@@ -524,109 +623,18 @@ VOID render()
 		1.0f,
 		0
 	);
+	UpdateCamera();
 
 	if (SUCCEEDED(renderDevice->BeginScene()))
 	{
 		setup_matrices();
 
-		camera_rotation_y -= mouse_state.lY * 0.4f;
-		camera_rotation_x -= mouse_state.lX * 0.4f;
-		D3DXVECTOR3 eye_point(
-			10 * cosf(camera_rotation_x * D3DX_PI / 180),
-			10 * cosf(camera_rotation_y * D3DX_PI / 180) + sinf(camera_rotation_y * D3DX_PI / 180),
-			10 * sinf(camera_rotation_x * D3DX_PI / 180)
-		);
-		D3DXVECTOR3 look_at_point(
-			0.0f,
-			0.0f,
-			1.0f
-		);
-		D3DXVECTOR3 up_vector(
-			0.0f,
-			1.0f,
-			0.0f
-		);
-		camera->look_at_position(
-			&eye_point,
-			&look_at_point,
-			&up_vector);
-		camera->set_position(
-			camera_coordinate_x,
-			camera_coordinate_y,
-			camera_coordinate_z
-		);
+		
 		camera->update();
 
-		renderDevice->SetFVF(D3DFVF_CUSTOM_VERTEX);
-		renderDevice->SetStreamSource(
-			0,
-			skyboxVertexBuffer,
-			0,
-			sizeof(CUSTOM_VERTEX)
-		);
-		renderDevice->SetRenderState(
-			D3DRS_LIGHTING,
-			FALSE
-		);
-
-		for (DWORD iterator = 0; iterator < 6; ++iterator)
-		{
-			renderDevice->SetTexture(
-				0,
-				skyboxTextureSet[iterator]
-			);
-			renderDevice->DrawPrimitive(
-				D3DPT_TRIANGLESTRIP,
-				iterator * 4,
-				2
-			);
-		}
-
-		renderDevice->SetRenderState(
-			D3DRS_LIGHTING,
-			TRUE
-		);
-
-		D3DXMATRIX translation_matrix;
-		D3DXMATRIX rotation_matrix;
-
-		D3DXMatrixRotationY(
-			&rotation_matrix,
-			1.6f
-		);
-		D3DXMatrixTranslation(
-			&translation_matrix,
-			1.2f,
-			-8.8f,
-			-0.2f
-		);
-		D3DXMatrixMultiply(
-			&world_matrix,
-			&translation_matrix,
-			&rotation_matrix
-		);
-		renderDevice->SetTransform(
-			D3DTS_WORLD,
-			&world_matrix
-		);
-
-		D3DXMatrixTranslation(
-			&translation_matrix,
-			spongePosX,
-			0.9f,
-			mesh_coordinate_z
-		);
-		renderDevice->SetTransform(
-			D3DTS_WORLD,
-			&(world_matrix * translation_matrix)
-		);
-
-		for (DWORD iterator = 0; iterator < number_of_materials; iterator++)
-		{
-			renderDevice->SetMaterial(&spongeMaterials[iterator]);
-			renderDevice->SetTexture(0, spongeTextures[iterator]);
-			spongeModel->DrawSubset(iterator);
-		}
+		DrawSkyBox();
+		DrawSpongeBob();
+		
 
 		renderDevice->EndScene();
 	}
