@@ -1,10 +1,10 @@
 class Camera
 {
 	protected:
-		D3DXVECTOR3 position;
+		D3DXVECTOR3 m_position;
 
 		D3DXVECTOR3 look_at;
-		D3DXVECTOR3 right;
+		D3DXVECTOR3 m_right;
 		D3DXVECTOR3 up;
 
 		float look_at_rotation;
