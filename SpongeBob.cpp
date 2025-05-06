@@ -47,7 +47,7 @@
 
 
 #define		GRAPH_NOTIFY			(WM_APP + 1) //descrie modul de reactie la evenimente care apar 
-												 //intr-un grafic de filtrare.(Definim un mesaj)
+//intr-un grafic de filtrare.(Definim un mesaj)
 
 
 LPDIRECT3D9							d3dInterface = NULL; // Il folosim pentru a crea dispozitivul D3DDevice
@@ -101,10 +101,10 @@ D3DXMATRIXA16						projection_matrix; //Matrice de proiectie
 
 
 LPD3DXMESH							spongeModel = NULL;			  //Obiectul meshei in sistem
-D3DMATERIAL9*						spongeMaterials = NULL;    //Material pt mesha
+D3DMATERIAL9* spongeMaterials = NULL;    //Material pt mesha
 DWORD								number_of_materials = 0L; // Nr de materiale al meshei
-LPDIRECT3DTEXTURE9*					spongeTextures = NULL;	  //Textura meshei
-float								spongePosX = 0.0f, spongePosY = 0.0f;
+LPDIRECT3DTEXTURE9* spongeTextures = NULL;	  //Textura meshei
+float								spongePosX = 0.0f, spongePosY = 0.9f;
 float								mesh_coordinate_z = 0.0f;
 float								mesh_movement_size = 0.2f;
 float								mesh_limit = 2.0f;
@@ -112,9 +112,9 @@ D3DXVECTOR3							bounding_box_lower_left_corner;
 D3DXVECTOR3							bounding_box_upper_right_corner;
 
 
-IGraphBuilder*						graph_builder = NULL;
-IMediaControl*						media_control = NULL;
-IMediaEventEx*						media_event = NULL;
+IGraphBuilder* graph_builder = NULL;
+IMediaControl* media_control = NULL;
+IMediaEventEx* media_event = NULL;
 
 
 LPDIRECTINPUT8						direct_input;
@@ -124,7 +124,7 @@ LPDIRECTINPUTDEVICE8				mouse_device;
 DIMOUSESTATE						mouse_state;
 
 
-Camera*								camera;
+Camera* camera;
 float								camera_coordinate_x = 0.0f, camera_coordinate_y = -6.0f, camera_coordinate_z = -5.8f;
 float								camera_rotation_x = 0.0f, camera_rotation_y = 0.0f;
 float								camera_movement_size = 0.4;
@@ -153,7 +153,7 @@ HRESULT initialize_direct_three_dimensional(HWND window_handler)
 		D3DDEVTYPE_HAL,
 		window_handler,
 		D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-		&direct_three_dimensional_parameters, 
+		&direct_three_dimensional_parameters,
 		&renderDevice
 	)))
 	{
@@ -205,12 +205,12 @@ HRESULT load_skybox()
 		return false;
 	}
 
-	void *vertices = NULL;
+	void* vertices = NULL;
 
 	if (FAILED(skyboxVertexBuffer->Lock(
 		0,
 		sizeof(CUSTOM_VERTEX) * 24,
-		(void **)&vertices,
+		(void**)&vertices,
 		0
 	)))
 		return E_FAIL;
@@ -357,7 +357,7 @@ HRESULT initialize_direct_show(HWND window_handler)
 	);
 	graph_builder->RenderFile
 	(
-		L"GROUND THEME.wav",
+		L"Spongebob Squarepants.mp3",
 		NULL
 	);
 
@@ -392,11 +392,11 @@ void graph_event_handler()
 		);
 		switch (event_code)
 		{
-			case EC_COMPLETE:
-			case EC_USERABORT:
-			case EC_ERRORABORT:
-				PostQuitMessage(0);
-				return;
+		case EC_COMPLETE:
+		case EC_USERABORT:
+		case EC_ERRORABORT:
+			PostQuitMessage(0);
+			return;
 		}
 	}
 }
@@ -457,12 +457,12 @@ VOID detect_input()
 		if (keys_state[key] & 0x80) {
 			float next = coord + delta;
 			if (next >= min && next <= max)
-				 coord = next;
-			
+				coord = next;
+
 		}
-		 };
-	
-		    // Listă configurabilă de mișcări
+		};
+
+	// Listă configurabilă de mișcări
 	struct Movement { BYTE key; float& coord; float delta, min, max; };
 	std::vector<Movement> moves = {
 	{DIK_UP,    mesh_coordinate_z,  mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
@@ -474,17 +474,20 @@ VOID detect_input()
 	{DIK_D,     camera_coordinate_x, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
 	{DIK_A,     camera_coordinate_x,-camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
 	{DIK_ADD,   camera_coordinate_y, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
+	 { DIK_PRIOR,    spongePosY, mesh_movement_size,     -skyboxSize + mesh_limit, skyboxSize - mesh_limit }, // PageUp
+	{ DIK_NEXT,     spongePosY, -mesh_movement_size,    -skyboxSize + mesh_limit, skyboxSize - mesh_limit }, // PageDown
+	
 	{DIK_SUBTRACT, camera_coordinate_y,-camera_movement_size,-skyboxSize + camera_limit, skyboxSize - camera_limit},
 	};
-	
-		    // Aplicăm toate mișcările
-		for (auto& m : moves)
-		 MoveAxis(m.key, m.coord, m.delta, m.min, m.max);
+
+	// Aplicăm toate mișcările
+	for (auto& m : moves)
+		MoveAxis(m.key, m.coord, m.delta, m.min, m.max);
 
 
-		// butoane audio
-		if (keys_state[DIK_M] & 0x80) media_control->Run();
-		if (keys_state[DIK_P] & 0x80) media_control->Pause();
+	// butoane audio
+	if (keys_state[DIK_M] & 0x80) media_control->Run();
+	if (keys_state[DIK_P] & 0x80) media_control->Pause();
 }
 
 
@@ -597,7 +600,7 @@ VOID DrawSpongeBob() {
 	D3DXMatrixTranslation(
 		&translation_matrix,
 		spongePosX,
-		0.9f,
+		spongePosY,
 		mesh_coordinate_z
 	);
 	renderDevice->SetTransform(
@@ -616,7 +619,7 @@ VOID DrawSpongeBob() {
 VOID render()
 {
 	renderDevice->Clear(
-		0, 
+		0,
 		NULL,
 		D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 		D3DCOLOR_XRGB(0, 0, 255),
@@ -629,12 +632,12 @@ VOID render()
 	{
 		setup_matrices();
 
-		
+
 		camera->update();
 
 		DrawSkyBox();
 		DrawSpongeBob();
-		
+
 
 		renderDevice->EndScene();
 	}
@@ -686,13 +689,13 @@ LRESULT WINAPI window_message_handler(HWND window_handler, UINT message, WPARAM 
 {
 	switch (message)
 	{
-		case WM_DESTROY:
-			deinitialize();
-			PostQuitMessage(0);
-			return 0;
-		case GRAPH_NOTIFY:
-			graph_event_handler();
-			return 0;
+	case WM_DESTROY:
+		deinitialize();
+		PostQuitMessage(0);
+		return 0;
+	case GRAPH_NOTIFY:
+		graph_event_handler();
+		return 0;
 	}
 
 	return DefWindowProc(window_handler, message, word_parameter, long_parameter);
@@ -713,7 +716,7 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 		NULL,
 		NULL,
 		"SpongeBob",
-		NULL 
+		NULL
 	};
 	RegisterClassEx(&window_class);
 

@@ -89,12 +89,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="SpongeBob.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CAMERA.h" />
-    <ClInclude Include="Graphics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
