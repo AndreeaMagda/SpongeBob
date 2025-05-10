@@ -23,5 +23,8 @@
     <ClInclude Include="CAMERA.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InputDeviceObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

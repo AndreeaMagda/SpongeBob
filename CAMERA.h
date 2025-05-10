@@ -50,7 +50,7 @@ HRESULT Camera::update_view_matrix()
 	);
 	D3DXMatrixRotationAxis(
 		&right_matrix,
-		&right,
+		&m_right,
 		right_rotation
 	);
 	D3DXMatrixRotationAxis(
@@ -71,8 +71,8 @@ HRESULT Camera::update_view_matrix()
 	);
 
 	D3DXVec3TransformCoord(
-		&right,
-		&right,
+		&m_right,
+		&m_right,
 		&total_matrix
 	);
 	D3DXVec3TransformCoord(
@@ -82,16 +82,16 @@ HRESULT Camera::update_view_matrix()
 	);
 	D3DXVec3Cross(
 		&look_at,
-		&right,
+		&m_right,
 		&up
 	);
 
 	
-	if (fabs(D3DXVec3Dot(&up, &right)) > 0.01)
+	if (fabs(D3DXVec3Dot(&up, &m_right)) > 0.01)
 		D3DXVec3Cross(
 			&up,
 			&look_at,
-			&right
+			&m_right
 		);
 
 	D3DXVec3Normalize(
@@ -99,8 +99,8 @@ HRESULT Camera::update_view_matrix()
 		&look_at
 	);
 	D3DXVec3Normalize(
-		&right,
-		&right
+		&m_right,
+		&m_right
 	);
 	D3DXVec3Normalize(
 		&up,
@@ -108,21 +108,21 @@ HRESULT Camera::update_view_matrix()
 	);
 
 	new_view_element_1 = -D3DXVec3Dot(
-		&right,
-		&position
+		&m_right,
+		&m_position
 	);
 	new_view_element_2 = -D3DXVec3Dot(
 		&up,
-		&position
+		&m_position
 	);
 	new_view_element_3 = -D3DXVec3Dot(
 		&look_at,
-		&position
+		&m_position
 	);
 	view_matrix = D3DXMATRIX(
-		right.x, up.x, look_at.x, 0.0f,
-		right.y, up.y, look_at.y, 0.0f,
-		right.z, up.z, look_at.z, 0.0f,
+		m_right.x, up.x, look_at.x, 0.0f,
+		m_right.y, up.y, look_at.y, 0.0f,
+		m_right.z, up.z, look_at.z, 0.0f,
 		new_view_element_1, new_view_element_2, new_view_element_3, 1.0f
 	);
 
@@ -139,7 +139,7 @@ HRESULT Camera::update_view_matrix()
 
 Camera::Camera(LPDIRECT3DDEVICE9 device)
 {
-	position = D3DXVECTOR3(
+	m_position = D3DXVECTOR3(
 		0.0f,
 		0.0f,
 		0.0f
@@ -150,7 +150,7 @@ Camera::Camera(LPDIRECT3DDEVICE9 device)
 		0.0f,
 		1.0f
 	);
-	right = D3DXVECTOR3(
+	m_right = D3DXVECTOR3(
 		1.0f,
 		0.0f,
 		0.0f
@@ -173,7 +173,7 @@ Camera::Camera(LPDIRECT3DDEVICE9 device)
 
 void Camera::set_position(FLOAT x, FLOAT y, FLOAT z)
 {
-	position = D3DXVECTOR3(
+	m_position = D3DXVECTOR3(
 		x,
 		y,
 		z
@@ -191,15 +191,15 @@ void Camera::look_at_position(D3DXVECTOR3 *new_position, D3DXVECTOR3 *new_look_a
 		new_up
 	);
 
-	position = *(new_position);
+	m_position = *(new_position);
 
 	look_at.x = view_matrix._13;
 	look_at.y = view_matrix._23;
 	look_at.z = view_matrix._33;
 
-	right.x = view_matrix._11;
-	right.y = view_matrix._21;
-	right.z = view_matrix._31;
+	m_right.x = view_matrix._11;
+	m_right.y = view_matrix._21;
+	m_right.z = view_matrix._31;
 
 	up.x = view_matrix._12;
 	up.y = view_matrix._22;

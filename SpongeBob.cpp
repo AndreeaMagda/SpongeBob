@@ -5,7 +5,7 @@
 #include <dinput.h> 
 #include "CAMERA.h"
 #include <vector>
-
+#include "InputDeviceObject.h"
 
 
 #define SAFE_RELEASE(resource)            \
@@ -117,21 +117,16 @@ IMediaControl* media_control = NULL;
 IMediaEventEx* media_event = NULL;
 
 
-LPDIRECTINPUT8						direct_input;
-LPDIRECTINPUTDEVICE8				keyboard_device;
-BYTE								keys_state[256];
-LPDIRECTINPUTDEVICE8				mouse_device;
-DIMOUSESTATE						mouse_state;
-
-
 Camera* camera;
 float								camera_coordinate_x = 0.0f, camera_coordinate_y = -6.0f, camera_coordinate_z = -5.8f;
 float								camera_rotation_x = 0.0f, camera_rotation_y = 0.0f;
 float								camera_movement_size = 0.4;
 float								camera_limit = 1.0f;
 
+InputDeviceObject* input = nullptr;
 
-HRESULT initialize_direct_three_dimensional(HWND window_handler)
+
+HRESULT InitD3D(HWND window_handler)
 {
 	if ((d3dInterface = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
 		return E_FAIL;
@@ -249,7 +244,7 @@ HRESULT load_skybox()
 }
 
 
-HRESULT initialize_geometry()
+HRESULT InitGeometry()
 {
 	LPD3DXBUFFER material_buffer;
 
@@ -402,65 +397,20 @@ void graph_event_handler()
 }
 
 
-HRESULT initialize_direct_input(HINSTANCE instance_handler, HWND window_handler)
+
+VOID DetectInput()
 {
-	DirectInput8Create(
-		instance_handler,
-		DIRECTINPUT_VERSION,
-		IID_IDirectInput8,
-		(void**)&direct_input,
-		NULL
-	);
-
-	direct_input->CreateDevice(
-		GUID_SysKeyboard,
-		&keyboard_device,
-		NULL
-	);
-	keyboard_device->SetDataFormat(&c_dfDIKeyboard);
-	keyboard_device->SetCooperativeLevel(
-		window_handler,
-		DISCL_NONEXCLUSIVE | DISCL_FOREGROUND
-	);
-
-	direct_input->CreateDevice(
-		GUID_SysMouse,
-		&mouse_device,
-		NULL
-	);
-	mouse_device->SetDataFormat(&c_dfDIMouse);
-	mouse_device->SetCooperativeLevel(
-		window_handler,
-		DISCL_EXCLUSIVE | DISCL_FOREGROUND
-	);
-
-	return S_OK;
-}
-
-
-VOID detect_input()
-{
-	keyboard_device->Acquire();
-	keyboard_device->GetDeviceState(
-		256,
-		(LPVOID)keys_state
-	);
-
-	mouse_device->Acquire();
-	mouse_device->GetDeviceState(
-		sizeof(DIMOUSESTATE),
-		(LPVOID)&mouse_state
-	);
+	input->DetectInput();
 
 	// Generic axis-movement helper
 	auto MoveAxis = [&](BYTE key, float& coord, float delta, float min, float max) {
-		if (keys_state[key] & 0x80) {
+		if (input->g_Keystate[key] & 0x80) {
 			float next = coord + delta;
 			if (next >= min && next <= max)
 				coord = next;
-
 		}
 		};
+
 
 	// Listă configurabilă de mișcări
 	struct Movement { BYTE key; float& coord; float delta, min, max; };
@@ -486,12 +436,13 @@ VOID detect_input()
 
 
 	// butoane audio
-	if (keys_state[DIK_M] & 0x80) media_control->Run();
-	if (keys_state[DIK_P] & 0x80) media_control->Pause();
+
+	if (input->g_Keystate[DIK_M] & 0x80) media_control->Run();
+	if (input->g_Keystate[DIK_P] & 0x80) media_control->Pause();
 }
 
 
-VOID setup_matrices()
+VOID SetupMatrices()
 {
 	D3DXMatrixIdentity(&world_matrix);
 	renderDevice->SetTransform(
@@ -513,8 +464,9 @@ VOID setup_matrices()
 }
 
 VOID UpdateCamera() {
-	camera_rotation_y -= mouse_state.lY * 0.4f;
-	camera_rotation_x -= mouse_state.lX * 0.4f;
+	camera_rotation_y -= input->g_pMousestate.lY * 0.4f;
+	camera_rotation_x -= input->g_pMousestate.lX * 0.4f;
+
 	D3DXVECTOR3 eye_point(
 		10 * cosf(camera_rotation_x * D3DX_PI / 180),
 		10 * cosf(camera_rotation_y * D3DX_PI / 180) + sinf(camera_rotation_y * D3DX_PI / 180),
@@ -630,7 +582,7 @@ VOID render()
 
 	if (SUCCEEDED(renderDevice->BeginScene()))
 	{
-		setup_matrices();
+		SetupMatrices();
 
 
 		camera->update();
@@ -671,21 +623,13 @@ VOID deinitialize()
 	SAFE_RELEASE(media_event);
 	SAFE_RELEASE(graph_builder);
 
-	// Input
-	if (keyboard_device) {
-		keyboard_device->Unacquire();
-		SAFE_RELEASE(keyboard_device);
-	}
-	if (mouse_device) {
-		mouse_device->Unacquire();
-		SAFE_RELEASE(mouse_device);
-	}
-	SAFE_RELEASE(direct_input);
+	SAFE_DELETE(input);
+
 }
 
 
 
-LRESULT WINAPI window_message_handler(HWND window_handler, UINT message, WPARAM word_parameter, LPARAM long_parameter)
+LRESULT WINAPI MsgProc(HWND window_handler, UINT message, WPARAM word_parameter, LPARAM long_parameter)
 {
 	switch (message)
 	{
@@ -707,7 +651,7 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 	WNDCLASSEX window_class = {
 		sizeof(WNDCLASSEX),
 		CS_CLASSDC,
-		window_message_handler,
+		MsgProc,
 		0L,
 		0L,
 		GetModuleHandle(NULL),
@@ -734,19 +678,20 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 		NULL
 	);
 
+	input = new InputDeviceObject(instance_handler, window_handler);
+
+
+
 	CoInitialize(NULL);
 
-	if (SUCCEEDED(initialize_direct_three_dimensional(window_handler)))
+	if (SUCCEEDED(InitD3D(window_handler)))
 	{
 		if (FAILED(initialize_direct_show(window_handler)))
 			return 0;
 
-		if (SUCCEEDED(initialize_geometry()))
+		if (SUCCEEDED(InitGeometry()))
 		{
-			initialize_direct_input(
-				instance_handler,
-				window_handler
-			);
+			
 
 			ShowWindow(
 				window_handler,
@@ -775,11 +720,11 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 				}
 				else
 				{
-					detect_input();
+					DetectInput();
 
 					render();
 
-					if (keys_state[DIK_ESCAPE] & 0x80)
+					if (input->g_Keystate[DIK_ESCAPE] & 0x80)
 						PostMessage(
 							window_handler,
 							WM_DESTROY,
