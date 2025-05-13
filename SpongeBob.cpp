@@ -105,7 +105,7 @@ D3DMATERIAL9* spongeMaterials = NULL;    //Material pt mesha
 DWORD								number_of_materials = 0L; // Nr de materiale al meshei
 LPDIRECT3DTEXTURE9* spongeTextures = NULL;	  //Textura meshei
 float								spongePosX = 0.0f, spongePosY = 0.9f;
-float								mesh_coordinate_z = 0.0f;
+float								spongePosZ = 0.0f;
 float								mesh_movement_size = 0.2f;
 float								mesh_limit = 2.0f;
 D3DXVECTOR3							bounding_box_lower_left_corner;
@@ -118,7 +118,7 @@ IMediaEventEx* media_event = NULL;
 
 
 Camera* camera;
-float								camera_coordinate_x = 0.0f, camera_coordinate_y = -6.0f, camera_coordinate_z = -5.8f;
+float								camera_coordinate_x = 0.0f, camera_coordinate_y = -6.0f, camera_coordinate_z = -4.8f;
 float								camera_rotation_x = 0.0f, camera_rotation_y = 0.0f;
 float								camera_movement_size = 0.4;
 float								camera_limit = 1.0f;
@@ -176,7 +176,7 @@ HRESULT InitD3D(HWND window_handler)
 }
 
 
-HRESULT load_skybox()
+HRESULT LoadSkybox()
 {
 	HRESULT result;
 
@@ -324,7 +324,7 @@ HRESULT InitGeometry()
 
 	vertex_buffer->Release();
 
-	load_skybox();
+	LoadSkybox();
 
 	camera = new Camera(renderDevice);
 
@@ -332,7 +332,7 @@ HRESULT InitGeometry()
 }
 
 
-HRESULT initialize_direct_show(HWND window_handler)
+HRESULT InitDirectShow(HWND window_handler)
 {
 	CoCreateInstance(
 		CLSID_FilterGraph,
@@ -368,7 +368,7 @@ HRESULT initialize_direct_show(HWND window_handler)
 }
 
 
-void graph_event_handler()
+void HandleGraphEvent()
 {
 	long event_code;
 	LONG_PTR first_parameter, second_parameter;
@@ -415,8 +415,8 @@ VOID DetectInput()
 	// Listă configurabilă de mișcări
 	struct Movement { BYTE key; float& coord; float delta, min, max; };
 	std::vector<Movement> moves = {
-	{DIK_UP,    mesh_coordinate_z,  mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
-	{DIK_DOWN,  mesh_coordinate_z, -mesh_movement_size,    -skyboxSize + mesh_limit,   skyboxSize},
+	{DIK_UP,    spongePosZ,  mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
+	{DIK_DOWN,  spongePosZ, -mesh_movement_size,    -skyboxSize + mesh_limit,   skyboxSize},
 	{DIK_RIGHT, spongePosX,         mesh_movement_size,    -skyboxSize,                skyboxSize - mesh_limit},
 	{DIK_LEFT,  spongePosX,        -mesh_movement_size,    -skyboxSize + mesh_limit,   skyboxSize},
 	{DIK_W,     camera_coordinate_z, camera_movement_size, -skyboxSize + camera_limit, skyboxSize - camera_limit},
@@ -482,11 +482,11 @@ VOID UpdateCamera() {
 		1.0f,
 		0.0f
 	);
-	camera->look_at_position(
+	camera->LookAtPos(
 		&eye_point,
 		&look_at_point,
 		&up_vector);
-	camera->set_position(
+	camera->SetPosition(
 		camera_coordinate_x,
 		camera_coordinate_y,
 		camera_coordinate_z
@@ -553,7 +553,7 @@ VOID DrawSpongeBob() {
 		&translation_matrix,
 		spongePosX,
 		spongePosY,
-		mesh_coordinate_z
+		spongePosZ
 	);
 	renderDevice->SetTransform(
 		D3DTS_WORLD,
@@ -568,7 +568,7 @@ VOID DrawSpongeBob() {
 	}
 }
 
-VOID render()
+VOID Render()
 {
 	renderDevice->Clear(
 		0,
@@ -585,7 +585,7 @@ VOID render()
 		SetupMatrices();
 
 
-		camera->update();
+		camera->Update();
 
 		DrawSkyBox();
 		DrawSpongeBob();
@@ -602,7 +602,7 @@ VOID render()
 	);
 }
 
-VOID deinitialize()
+VOID Deinitialize()
 {
 	// Direct3D
 	SAFE_RELEASE(renderDevice);
@@ -634,11 +634,11 @@ LRESULT WINAPI MsgProc(HWND window_handler, UINT message, WPARAM word_parameter,
 	switch (message)
 	{
 	case WM_DESTROY:
-		deinitialize();
+		Deinitialize();
 		PostQuitMessage(0);
 		return 0;
 	case GRAPH_NOTIFY:
-		graph_event_handler();
+		HandleGraphEvent();
 		return 0;
 	}
 
@@ -686,7 +686,7 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 
 	if (SUCCEEDED(InitD3D(window_handler)))
 	{
-		if (FAILED(initialize_direct_show(window_handler)))
+		if (FAILED(InitDirectShow(window_handler)))
 			return 0;
 
 		if (SUCCEEDED(InitGeometry()))
@@ -722,7 +722,7 @@ INT WINAPI WinMain(HINSTANCE instance_handler, HINSTANCE, LPSTR, INT)
 				{
 					DetectInput();
 
-					render();
+					Render();
 
 					if (input->g_Keystate[DIK_ESCAPE] & 0x80)
 						PostMessage(

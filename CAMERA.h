@@ -17,28 +17,28 @@ class Camera
 
 		bool update_required;
 
-		HRESULT update_view_matrix();
+		HRESULT UpdateCameraMatrices();
 
 
 	public:
 		Camera(LPDIRECT3DDEVICE9 rendering_device);
 
-		void set_position(
+		void SetPosition(
 			FLOAT x,
 			FLOAT y,
 			FLOAT z
 		);
-		void look_at_position(
+		void LookAtPos(
 			D3DXVECTOR3 *position,
 			D3DXVECTOR3 *look_at,
 			D3DXVECTOR3 *up
 		);
 
-		HRESULT update();
+		HRESULT Update();
 };
 
 
-HRESULT Camera::update_view_matrix()
+HRESULT Camera::UpdateCameraMatrices()
 {
 	D3DXMATRIX total_matrix, look_at_matrix, right_matrix, up_matrix;
 	float new_view_element_1, new_view_element_2, new_view_element_3;
@@ -171,7 +171,7 @@ Camera::Camera(LPDIRECT3DDEVICE9 device)
 }
 
 
-void Camera::set_position(FLOAT x, FLOAT y, FLOAT z)
+void Camera::SetPosition(FLOAT x, FLOAT y, FLOAT z)
 {
 	m_position = D3DXVECTOR3(
 		x,
@@ -182,7 +182,7 @@ void Camera::set_position(FLOAT x, FLOAT y, FLOAT z)
 }
 
 
-void Camera::look_at_position(D3DXVECTOR3 *new_position, D3DXVECTOR3 *new_look_at, D3DXVECTOR3 *new_up)
+void Camera::LookAtPos(D3DXVECTOR3 *new_position, D3DXVECTOR3 *new_look_at, D3DXVECTOR3 *new_up)
 {
 	D3DXMatrixLookAtLH(
 		&view_matrix,
@@ -209,12 +209,12 @@ void Camera::look_at_position(D3DXVECTOR3 *new_position, D3DXVECTOR3 *new_look_a
 }
 
 
-HRESULT Camera::update()
+HRESULT Camera::Update()
 {
 	if(rendering_device)
 	{
 		if(update_required)
-			return update_view_matrix();
+			return UpdateCameraMatrices();
 
 		return rendering_device->SetTransform(
 			D3DTS_VIEW,
