@@ -1,4 +1,4 @@
-#include <dinput.h>
+﻿#include <dinput.h>
 
 using namespace std;
 
@@ -41,12 +41,13 @@ public:
 		g_pDinmouse->SetCooperativeLevel(hWnd, DISCL_EXCLUSIVE | DISCL_FOREGROUND);
 	}
 
-	VOID DetectInput()
+	VOID DetectInputObj()
 	{
+		//Pune în starea adactivă tastatura și mouse-ul (dacă au fost pierdute sau nu sunt active).
 		g_pDinKeyboard->Acquire();
 		g_pDinmouse->Acquire();
 
-		// get the input data
+		// get the input data, Umple vectorul global g_Keystate[256] cu starea tuturor tastelor:
 		g_pDinKeyboard->GetDeviceState(256, (LPVOID)g_Keystate);//returneaza vector global de 256 caractere
 		g_pDinmouse->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&g_pMousestate); //returneaza starea mouse-ului (informatii)
 	}

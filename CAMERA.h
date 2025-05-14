@@ -1,7 +1,7 @@
 class Camera
 {
 	protected:
-		D3DXVECTOR3 m_position;
+		D3DXVECTOR3 m_position;// pozitia camerei
 
 		D3DXVECTOR3 look_at;
 		D3DXVECTOR3 m_right;
